@@ -1,0 +1,124 @@
+﻿
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+
+<div class="row">
+    <div id="tablo" class="col-md-6">
+        @* Tablo *@
+        
+    </div>
+    <div id="kullaniciDetay" class="col-md-6">
+        @* Kullanıcı Detay Bilgisi *@
+        <div id="kullaniciDetayAlan" style="display:none!important;" >
+            <div class="row">
+                <div class="col-md-4">
+                    <h4 class="text-center lead">Mevcut Fotoğrafınız</h4>
+                    <img src=""  id="kullaniciResim" class="img-thumbnail img-fluid"/>
+                </div>
+                <div class="col-md-8">
+                    <form>
+                        <input type="hidden" id="kullaniciId" />
+                        <div class="form-group">
+                            <label>Ad Soyad Bilgisi:</label>
+                            <input type="text" class="form-control" id="adsoyad" />
+                        </div>
+                        <div class="form-group">
+                            <label>Resim:</label>
+                            <input type="file" class="form-control-file" id="guncellenecekResim" />
+                        </div>
+                        <div class="form-group">
+                            <button id="btnGuncelle" class="btn btn-info btn-sm" type="button">Kaydet</button>
+                            <button onclick="kullaniciDetayAlanKapat()" id="btnKapat" class="btn btn-danger btn-sm" type="button">Kapat</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="kullaniciEkle" class="col-md-12">
+        @* Kullanıcı Ekle *@
+    </div>
+</div>
+
+
+
+@section Scripts{ 
+
+    
+
+<script>
+
+    function kullaniciDetayAlanKapat() {
+        $("#kullaniciDetayAlan").fadeOut(500);
+    }
+
+  
+    function getirId(id) {
+        $.ajax({
+            url: "/Home/GetirIdIle",
+            type: "Get",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            data: { kullaniciid:id},
+            success: function (data) {
+                $("#kullaniciDetayAlan").fadeIn(500);
+                let gelenKullanici = jQuery.parseJSON(data);
+                $("#kullaniciId").val(gelenKullanici.Id);
+                $("#adsoyad").val(gelenKullanici.AdSoyad);
+                $("#kullaniciResim").attr("src", "/img/" + gelenKullanici.ResimAd);
+            }
+        });
+    }
+    function getirHepsi() {
+        $.ajax({
+            url: "/Home/GetirHepsi",
+            contentType: "application/json;charset=utf-8",
+            type: "Get",
+            dataType: "json",
+            success: function (data) {
+
+                var objeyeCevrildi = jQuery.parseJSON(data);
+                let table = `<table class='table table-bordered table-sm><tr> <th>Id</th> <th>Ad Soyad</th> <th>ResimAd</th> <th>İşlem</th> </tr>'`
+                $.each(objeyeCevrildi, (index, value) => {
+                    table += `<tr><td>${value.Id}</td> <td>${value.AdSoyad}</td> <td><img src='/img/${value.ResimAd}' class='w-100 img-fluid' style='height:5rem!important;'/></td> <td><button onclick='getirId(${value.Id})' class='btn btn-warning btn-sm'>Detay Göster</button></td> </tr>`
+                });
+                table += `</table>`;
+                $("#tablo").html(table);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        getirHepsi();
+        $("#btnGuncelle").click(function () {
+            let kullaniciId = $("#kullaniciId").val();
+            let adsoyad = $("#adsoyad").val();
+            let file = $("#guncellenecekResim")[0].files[0];
+
+            let formData = new FormData();
+            formData.append("Id", kullaniciId);
+            formData.append("AdSoyad", adsoyad);
+            if (file != null) {
+                formData.append("File", file, file.fileName);
+            }
+            $.ajax({
+                url: "/Home/Guncelle",
+                type: "Post",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function () {
+                    $("#kullaniciDetayAlan").fadeOut(500);
+                    getirHepsi();
+                }
+            })
+        })
+    });
+</script>
+
+
+}
